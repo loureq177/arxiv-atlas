@@ -18,7 +18,7 @@ is the real v1 date) and stored in PostgreSQL.
 ### Setup
 
 ```sh
-docker compose up -d                 # PostgreSQL 17 + pgvector
+podman compose up -d                 # PostgreSQL 18 + pgvector (docker compose works too)
 cp .env.example .env                 # then `set -a; source .env; set +a`
 uv sync
 uv run arxiv-atlas init-db

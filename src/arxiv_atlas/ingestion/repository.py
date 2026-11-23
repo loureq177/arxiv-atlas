@@ -68,7 +68,7 @@ class Repository:
         self._conn.close()
 
     def init_schema(self) -> None:
-        sql = files("arxiv_atlas.ingestion").joinpath("schema.sql").read_text()
+        sql = files("arxiv_atlas.db").joinpath("migrations", "0001_ingestion.sql").read_text()
         self._conn.execute(sql)
 
     def is_window_done(self, set_spec: str, from_date: date, until_date: date) -> bool:

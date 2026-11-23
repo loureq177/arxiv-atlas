@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/">
+    <responseDate>2026-10-26T18:07:25Z</responseDate>
+    <request verb="ListRecords">http://oaipmh.arxiv.org/oai</request>
+    <ListRecords>
+        <record>
+            <header>
+                <identifier>oai:arXiv.org:2610.12345</identifier>
+                <datestamp>2026-10-22</datestamp>
+                <setSpec>cs:cs:CL</setSpec>
+            </header>
+            <metadata>
+                <arXivRaw xmlns="http://arxiv.org/OAI/arXivRaw/">
+                    <id>2610.12345</id>
+                    <submitter>John Roe</submitter>
+                    <version version="v1">
+                        <date>Wed, 21 Oct 2026 09:30:00 GMT</date>
+                        <size>200kb</size>
+                    </version>
+                    <title>Language Models and Things</title>
+                    <authors>John Roe and Ann Poe</authors>
+                    <categories>cs.CL cs.AI</categories>
+                    <abstract>We study language models.</abstract>
+                </arXivRaw>
+            </metadata>
+        </record>
+        <resumptionToken/>
+    </ListRecords>
+</OAI-PMH>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Trimmed from a real oaipmh.arxiv.org response (abstracts shortened); the deleted
+     record and the cs.CV-only record are synthetic. -->
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+    <responseDate>2026-10-26T18:07:20Z</responseDate>
+    <request verb="ListRecords" metadataPrefix="arXivRaw" set="cs:cs:LG">http://oaipmh.arxiv.org/oai</request>
+    <ListRecords>
+        <record>
+            <header>
+                <identifier>oai:arXiv.org:1906.08676</identifier>
+                <datestamp>2026-10-20</datestamp>
+                <setSpec>cs:cs:CV</setSpec>
+                <setSpec>cs:cs:LG</setSpec>
+            </header>
+            <metadata>
+                <arXivRaw xmlns="http://arxiv.org/OAI/arXivRaw/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://arxiv.org/OAI/arXivRaw/ https://oaipmh.arxiv.org/OAI/arXivRaw.xsd">
+                    <id>1906.08676</id>
+                    <submitter>Adam Byerly</submitter>
+                    <version version="v1">
+                        <date>Thu, 20 Jun 2019 14:54:14 GMT</date>
+                        <size>789kb</size>
+                    </version>
+                    <version version="v2">
+                        <date>Wed, 27 Jan 2021 01:55:50 GMT</date>
+                        <size>689kb</size>
+                        <source_type>D</source_type>
+                    </version>
+                    <title>Homogeneous Vector Capsules Enable Adaptive Gradient Descent in
+  Convolutional Neural Networks</title>
+                    <authors>Adam Byerly and Tatiana Kalganova</authors>
+                    <categories>cs.CV cs.LG</categories>
+                    <comments>14 pages, 5 figures, 7 tables</comments>
+                    <doi>10.1109/ACCESS.2021.3066842</doi>
+                    <license>http://arxiv.org/licenses/nonexclusive-distrib/1.0/</license>
+                    <abstract>  Capsules are the name given by Geoffrey Hinton to vector-valued neurons.
+reducing the dependence a model&#39;s achievable accuracy has on the finely
+tuned hyperparameters of a non-adaptive optimizer.
+</abstract>
+                </arXivRaw>
+            </metadata>
+        </record>
+        <record>
+            <header status="deleted">
+                <identifier>oai:arXiv.org:2401.00001</identifier>
+                <datestamp>2026-10-20</datestamp>
+                <setSpec>cs:cs:LG</setSpec>
+            </header>
+        </record>
+        <record>
+            <header>
+                <identifier>oai:arXiv.org:2609.00002</identifier>
+                <datestamp>2026-10-21</datestamp>
+                <setSpec>cs:cs:CV</setSpec>
+            </header>
+            <metadata>
+                <arXivRaw xmlns="http://arxiv.org/OAI/arXivRaw/">
+                    <id>2609.00002</id>
+                    <submitter>Jane Doe</submitter>
+                    <version version="v1">
+                        <date>Tue, 1 Sep 2026 10:00:00 GMT</date>
+                        <size>100kb</size>
+                    </version>
+                    <title>A Paper Only About Vision</title>
+                    <authors>Jane Doe</authors>
+                    <categories>cs.CV</categories>
+                    <license>http://creativecommons.org/licenses/by/4.0/</license>
+                    <abstract>Nothing to do with our target categories.</abstract>
+                </arXivRaw>
+            </metadata>
+        </record>
+        <resumptionToken expirationDate='2026-10-27T00:00:00Z'>verb%3DListRecords%26metadataPrefix%3DarXivRaw%26from%3D2026-09-09%26until%3D2026-10-20%26set%3Dcs%253Acs%253ACL%26skip%3D48</resumptionToken>
+    </ListRecords>
+</OAI-PMH>

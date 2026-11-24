@@ -14,7 +14,7 @@ import pytest
 from arxiv_atlas.ingestion.parser import parse_list_records
 from arxiv_atlas.ingestion.repository import Repository
 
-DSN = os.environ.get("TEST_DATABASE_URL")
+DSN = os.environ.get("TEST_DATABASE_URL", "")
 pytestmark = pytest.mark.skipif(not DSN, reason="TEST_DATABASE_URL not set")
 
 
@@ -47,9 +47,11 @@ def test_save_page_upserts_and_checkpoints(repo, fixture_bytes):
     repo.save_page(run_id, page, page.papers[:1])
     repo.save_page(run_id, page, page.papers[:1])  # replaying a page is harmless
 
-    title, primary, categories, published_at, deleted = fetch_paper(repo, "1906.08676")
-    assert primary == "cs.CV" and categories == ["cs.CV", "cs.LG"]
-    assert published_at.year == 2019 and not deleted
+    _, primary, categories, published_at, deleted = fetch_paper(repo, "1906.08676")
+    assert primary == "cs.CV"
+    assert categories == ["cs.CV", "cs.LG"]
+    assert published_at.year == 2019
+    assert not deleted
     run = repo.find_unfinished_run("cs:cs:LG", date(2026, 10, 1), date(2026, 10, 25))
     assert run.resumption_token == page.resumption_token
     count = repo._conn.execute("SELECT count(*) FROM papers").fetchone()[0]

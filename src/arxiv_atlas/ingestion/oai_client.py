@@ -7,7 +7,6 @@ fetch as a plain function call.
 
 from __future__ import annotations
 
-import itertools
 import logging
 import time
 from collections.abc import Callable
@@ -27,7 +26,7 @@ RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
 MAX_BACKOFF_S = 600.0
 
 
-class OaiUnavailable(Exception):
+class OaiUnavailableError(Exception):
     """The endpoint kept failing after all retries."""
 
 
@@ -91,7 +90,8 @@ class OaiClient:
         )
 
     def _get(self, params: dict[str, str]) -> bytes:
-        for attempt in itertools.count():
+        attempt = 0
+        while True:
             self._wait_for_slot()
             try:
                 response = self._http.get(self._base_url, params=params)
@@ -106,9 +106,10 @@ class OaiClient:
                 delay = _retry_after_seconds(response) or self._backoff(attempt)
 
             if attempt >= self._max_retries:
-                raise OaiUnavailable(f"giving up after {attempt + 1} attempts: {problem}")
+                raise OaiUnavailableError(f"giving up after {attempt + 1} attempts: {problem}")
             log.warning("%s, retrying in %.0fs (attempt %d)", problem, delay, attempt + 1)
             self._sleep(delay)
+            attempt += 1
 
     def _wait_for_slot(self) -> None:
         now = self._clock()
@@ -121,7 +122,7 @@ class OaiClient:
 
     @staticmethod
     def _backoff(attempt: int) -> float:
-        return min(MAX_BACKOFF_S, 5.0 * 2**attempt)
+        return min(MAX_BACKOFF_S, 5.0 * 2.0**attempt)
 
 
 def _retry_after_seconds(response: httpx.Response) -> float | None:
@@ -133,6 +134,6 @@ def _retry_after_seconds(response: httpx.Response) -> float | None:
     else:
         try:
             seconds = (parsedate_to_datetime(value) - datetime.now(UTC)).total_seconds()
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return None
     return min(MAX_BACKOFF_S, max(seconds, 1.0))

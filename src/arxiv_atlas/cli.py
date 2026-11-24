@@ -9,7 +9,7 @@ from datetime import UTC, date, datetime
 
 from arxiv_atlas.ingestion.harvest import EARLIEST_DATESTAMP, TARGET_SETS, Harvester
 from arxiv_atlas.ingestion.oai_client import OaiClient
-from arxiv_atlas.ingestion.repository import Repository
+from arxiv_atlas.ingestion.repository import DatabaseStatus, Repository
 
 DEFAULT_DSN = "postgresql://atlas:atlas@localhost:5432/atlas"
 
@@ -46,31 +46,41 @@ def _parser() -> argparse.ArgumentParser:
     sub.add_parser("init-db", help="create tables and the pgvector extension")
     sub.add_parser("status", help="show what is in the database")
 
-    sets_kwargs = dict(
-        nargs="+", default=list(TARGET_SETS), metavar="SET",
-        help="OAI set specs (default: %(default)s)",
-    )
     backfill = sub.add_parser("backfill", help="harvest history in datestamp windows")
-    backfill.add_argument("--from", dest="start", type=date.fromisoformat,
-                          default=EARLIEST_DATESTAMP)
-    backfill.add_argument("--until", dest="end", type=date.fromisoformat, default=None,
-                          help="default: today (UTC)")
+    backfill.add_argument(
+        "--from", dest="start", type=date.fromisoformat, default=EARLIEST_DATESTAMP
+    )
+    backfill.add_argument(
+        "--until", dest="end", type=date.fromisoformat, default=None, help="default: today (UTC)"
+    )
     backfill.add_argument("--window-days", type=int, default=30)
-    backfill.add_argument("--sets", **sets_kwargs)
+    _add_sets_argument(backfill)
 
     update = sub.add_parser("update", help="incremental harvest since the last run")
-    update.add_argument("--sets", **sets_kwargs)
+    _add_sets_argument(update)
     return parser
 
 
-def _print_status(status: dict[str, object]) -> None:
-    total, deleted, first, last = status["papers"]
-    print(f"papers: {total} ({deleted} deleted), published {_d(first)} .. {_d(last)}")
+def _add_sets_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--sets",
+        nargs="+",
+        default=list(TARGET_SETS),
+        metavar="SET",
+        help="OAI set specs (default: %(default)s)",
+    )
+
+
+def _print_status(status: DatabaseStatus) -> None:
+    print(
+        f"papers: {status.total_papers} ({status.deleted_papers} deleted), "
+        f"published {_d(status.first_published)} .. {_d(status.last_published)}"
+    )
     print("\nby primary category:")
-    for category, count in status["by_primary_category"]:
+    for category, count in status.by_primary_category:
         print(f"  {category:<12} {count}")
     print("\nharvest runs:")
-    for set_spec, run_status, count, until in status["runs"]:
+    for set_spec, run_status, count, until in status.runs:
         print(f"  {set_spec:<14} {run_status:<8} {count:>5} windows, up to {until}")
 
 

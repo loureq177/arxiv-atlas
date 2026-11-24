@@ -3,7 +3,7 @@ from datetime import date
 import httpx
 import pytest
 
-from arxiv_atlas.ingestion.oai_client import OaiClient, OaiUnavailable
+from arxiv_atlas.ingestion.oai_client import OaiClient, OaiUnavailableError
 
 
 class FakeTime:
@@ -60,7 +60,8 @@ def test_resumption_token_is_sent_verbatim_after_decoding(fixture_bytes):
 
     # The server URL-decodes the query once and must get the token back unchanged.
     assert seen[0].params["resumptionToken"] == token
-    assert "verb" in seen[0].params and "metadataPrefix" not in seen[0].params
+    assert "verb" in seen[0].params
+    assert "metadataPrefix" not in seen[0].params
 
 
 def test_enforces_minimum_interval_between_requests(fixture_bytes):
@@ -113,7 +114,7 @@ def test_gives_up_after_max_retries():
     fake_time = FakeTime()
     client = make_client(lambda request: httpx.Response(503), fake_time, max_retries=2)
 
-    with pytest.raises(OaiUnavailable):
+    with pytest.raises(OaiUnavailableError):
         client.resume("t")
 
 
@@ -130,5 +131,5 @@ def test_client_errors_are_not_retried():
 
 
 def test_rejects_interval_below_arxiv_policy():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="between requests"):
         OaiClient(min_interval=1.0)

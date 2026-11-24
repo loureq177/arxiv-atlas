@@ -109,7 +109,10 @@ class Harvester:
 
         log.info(
             "%s %s..%s: %s",
-            set_spec, from_date, until_date, "resuming" if token else "starting",
+            set_spec,
+            from_date,
+            until_date,
+            "resuming" if token else "starting",
         )
         try:
             page = self._fetch(set_spec, from_date, until_date, token, run_id)
@@ -118,7 +121,11 @@ class Harvester:
                 self._repo.save_page(run_id, page, relevant)
                 log.info(
                     "%s %s..%s: page with %d records, %d kept",
-                    set_spec, from_date, until_date, page.records_seen, len(relevant),
+                    set_spec,
+                    from_date,
+                    until_date,
+                    page.records_seen,
+                    len(relevant),
                 )
                 if page.resumption_token is None:
                     break

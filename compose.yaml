@@ -1,6 +1,9 @@
 services:
   db:
     image: docker.io/pgvector/pgvector:pg18
+    # A tiny init as PID 1 reaps processes started with `exec`. Without it Postgres is
+    # PID 1, inherits them, and treats one dying as a crash: it kills every connection.
+    init: true
     environment:
       POSTGRES_USER: atlas
       POSTGRES_PASSWORD: atlas

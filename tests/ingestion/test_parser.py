@@ -11,6 +11,7 @@ def test_parses_papers_deleted_records_and_token(fixture_bytes):
     assert [p.arxiv_id for p in page.papers] == ["1906.08676", "2609.00002"]
     assert page.deleted_ids == ["2401.00001"]
     assert page.records_seen == 3
+    assert page.resumption_token is not None
     assert page.resumption_token.startswith("verb%3DListRecords")
     assert page.token_expires_at == datetime(2026, 10, 27, tzinfo=UTC)
 
@@ -56,7 +57,9 @@ def test_empty_resumption_token_marks_last_page(fixture_bytes):
 def test_no_records_match_is_an_empty_page(fixture_bytes):
     page = parse_list_records(fixture_bytes("error_no_records.xml"))
 
-    assert page.papers == [] and page.deleted_ids == [] and page.resumption_token is None
+    assert page.papers == []
+    assert page.deleted_ids == []
+    assert page.resumption_token is None
 
 
 def test_other_protocol_errors_raise(fixture_bytes):
@@ -67,8 +70,6 @@ def test_other_protocol_errors_raise(fixture_bytes):
 
 
 def test_malformed_record_is_skipped_not_fatal(fixture_bytes):
-    xml = fixture_bytes("last_page.xml").replace(
-        b"<categories>cs.CL cs.AI</categories>", b""
-    )
+    xml = fixture_bytes("last_page.xml").replace(b"<categories>cs.CL cs.AI</categories>", b"")
 
     assert parse_list_records(xml).papers == []

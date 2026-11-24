@@ -88,15 +88,22 @@ def parse_list_records(xml: bytes) -> OaiPage:
     deleted_ids: list[str] = []
     for record in list_records.iterfind("oai:record", NS):
         header = record.find("oai:header", NS)
+        if header is None:
+            log.warning("skipping record without <header>")
+            continue
         arxiv_id = _strip_prefix(header.findtext("oai:identifier", default="", namespaces=NS))
         if header.get("status") == "deleted":
             deleted_ids.append(arxiv_id)
             continue
-        datestamp = date.fromisoformat(header.findtext("oai:datestamp", namespaces=NS).strip())
         metadata = record.find("oai:metadata/raw:arXivRaw", NS)
         try:
+            if metadata is None:
+                raise ValueError("missing <arXivRaw> metadata")
+            datestamp = date.fromisoformat(
+                header.findtext("oai:datestamp", default="", namespaces=NS).strip()
+            )
             papers.append(_parse_paper(metadata, datestamp))
-        except (AttributeError, ValueError, TypeError) as exc:
+        except (ValueError, TypeError) as exc:
             # One broken record should not abort a multi-hour harvest.
             log.warning("skipping malformed record %s: %r", arxiv_id, exc)
 
@@ -106,7 +113,7 @@ def parse_list_records(xml: bytes) -> OaiPage:
 
 def _parse_paper(meta: ET.Element, datestamp: date) -> Paper:
     version_dates = [
-        parsedate_to_datetime(v.findtext("raw:date", namespaces=NS))
+        parsedate_to_datetime(v.findtext("raw:date", default="", namespaces=NS))
         for v in meta.iterfind("raw:version", NS)
     ]
     if not version_dates:
@@ -136,10 +143,11 @@ def _parse_paper(meta: ET.Element, datestamp: date) -> Paper:
 
 def _parse_token(element: ET.Element | None) -> tuple[str | None, datetime | None]:
     # OAI-PMH marks the last page with an empty (or missing) <resumptionToken/>.
-    if element is None or not (element.text or "").strip():
+    token = (element.text or "").strip() if element is not None else ""
+    if element is None or not token:
         return None, None
     expires = element.get("expirationDate")
-    return element.text.strip(), datetime.fromisoformat(expires) if expires else None
+    return token, datetime.fromisoformat(expires) if expires else None
 
 
 def _field(meta: ET.Element, tag: str) -> str:

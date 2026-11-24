@@ -7,6 +7,7 @@ from datetime import date, datetime
 from importlib.resources import files
 
 import psycopg
+from psycopg.rows import TupleRow
 
 from arxiv_atlas.ingestion.parser import OaiPage, Paper
 
@@ -54,6 +55,16 @@ class HarvestRun:
     token_expires_at: datetime | None
 
 
+@dataclass(frozen=True, slots=True)
+class DatabaseStatus:
+    total_papers: int
+    deleted_papers: int
+    first_published: datetime | None
+    last_published: datetime | None
+    by_primary_category: list[tuple[str, int]]
+    runs: list[tuple[str, str, int, date]]  # set_spec, status, windows, latest until_date
+
+
 class Repository:
     def __init__(self, conn: psycopg.Connection) -> None:
         # Autocommit everywhere except inside explicit `transaction()` blocks.
@@ -68,7 +79,9 @@ class Repository:
         self._conn.close()
 
     def init_schema(self) -> None:
-        sql = files("arxiv_atlas.db").joinpath("migrations", "0001_ingestion.sql").read_text()
+        # Bytes, not str: psycopg types queries as LiteralString to block SQL built from
+        # runtime strings, and a file we ship is trusted but not a literal.
+        sql = files("arxiv_atlas.db").joinpath("migrations", "0001_ingestion.sql").read_bytes()
         self._conn.execute(sql)
 
     def is_window_done(self, set_spec: str, from_date: date, until_date: date) -> bool:
@@ -94,12 +107,14 @@ class Repository:
         return HarvestRun(*row) if row else None
 
     def start_run(self, set_spec: str, from_date: date, until_date: date) -> int:
-        row = self._conn.execute(
-            """INSERT INTO harvest_runs (set_spec, from_date, until_date, status)
-               VALUES (%s, %s, %s, 'running') RETURNING id""",
-            (set_spec, from_date, until_date),
-        ).fetchone()
-        return row[0]
+        row = _one_row(
+            self._conn.execute(
+                """INSERT INTO harvest_runs (set_spec, from_date, until_date, status)
+                   VALUES (%s, %s, %s, 'running') RETURNING id""",
+                (set_spec, from_date, until_date),
+            )
+        )
+        return int(row[0])
 
     def restart_run(self, run_id: int) -> None:
         self._conn.execute(
@@ -157,18 +172,23 @@ class Repository:
         )
 
     def last_done_until(self, set_spec: str) -> date | None:
-        row = self._conn.execute(
-            "SELECT max(until_date) FROM harvest_runs WHERE set_spec = %s AND status = 'done'",
-            (set_spec,),
-        ).fetchone()
-        return row[0]
+        row = _one_row(
+            self._conn.execute(
+                "SELECT max(until_date) FROM harvest_runs WHERE set_spec = %s AND status = 'done'",
+                (set_spec,),
+            )
+        )
+        last_until: date | None = row[0]
+        return last_until
 
-    def status(self) -> dict[str, object]:
-        papers = self._conn.execute(
-            """SELECT count(*), count(*) FILTER (WHERE is_deleted),
-                      min(published_at), max(published_at)
-               FROM papers"""
-        ).fetchone()
+    def status(self) -> DatabaseStatus:
+        total, deleted, first, last = _one_row(
+            self._conn.execute(
+                """SELECT count(*), count(*) FILTER (WHERE is_deleted),
+                          min(published_at), max(published_at)
+                   FROM papers"""
+            )
+        )
         by_category = self._conn.execute(
             """SELECT primary_category, count(*) FROM papers
                WHERE NOT is_deleted GROUP BY 1 ORDER BY 2 DESC LIMIT 15"""
@@ -177,7 +197,22 @@ class Repository:
             """SELECT set_spec, status, count(*), max(until_date)
                FROM harvest_runs GROUP BY 1, 2 ORDER BY 1, 2"""
         ).fetchall()
-        return {"papers": papers, "by_primary_category": by_category, "runs": runs}
+        return DatabaseStatus(
+            total_papers=total,
+            deleted_papers=deleted,
+            first_published=first,
+            last_published=last,
+            by_primary_category=[(c, n) for c, n in by_category],
+            runs=[(s, st, n, u) for s, st, n, u in runs],
+        )
+
+
+def _one_row(cursor: psycopg.Cursor[TupleRow]) -> TupleRow:
+    # For statements that always return a row: INSERT ... RETURNING, aggregates.
+    row = cursor.fetchone()
+    if row is None:
+        raise RuntimeError("expected a row, got none")
+    return row
 
 
 def _paper_params(paper: Paper) -> dict[str, object]:

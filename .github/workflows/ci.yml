@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    # Same image as compose.yaml, so repository tests run against real Postgres + pgvector.
+    services:
+      postgres:
+        image: pgvector/pgvector:pg18
+        env:
+          POSTGRES_USER: atlas
+          POSTGRES_PASSWORD: atlas
+          POSTGRES_DB: atlas_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U atlas -d atlas_test"
+          --health-interval 5s
+          --health-retries 10
+
+    env:
+      TEST_DATABASE_URL: postgresql://atlas:atlas@localhost:5432/atlas_test
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      # --locked fails if uv.lock is out of date with pyproject.toml.
+      - run: uv sync --locked
+      # The same hooks as on a local commit: one definition of "clean code".
+      - run: uv run pre-commit run --all-files --show-diff-on-failure
+      - run: uv run pytest

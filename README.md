@@ -63,6 +63,23 @@ uv run arxiv-atlas search "LLM agents that use tools"
 rerun, and after an `update` it embeds just the new papers. A changed abstract is
 embedded again.
 
+## Topics
+
+Topics are found, not predefined: UMAP squeezes the vectors to 5 dimensions, HDBSCAN
+finds dense groups of papers there, and c-TF-IDF picks the words that set each group
+apart. Papers in no dense group get no topic rather than a wrong one.
+
+```sh
+uv run arxiv-atlas fit-topics          # fit on a 100k sample, then assign the rest
+uv run arxiv-atlas topics              # list topics with sizes and keywords
+uv run arxiv-atlas assign-topics       # after `update` + `embed`: topics for new papers
+```
+
+The fit runs on a sample because UMAP on every paper does not fit in 16 GB of RAM.
+Every other paper takes the topic of its 10 most similar sample papers, which is also
+how new papers are handled day to day. Each fit is a new run in `topic_runs`; topic
+ids only mean something within their run.
+
 ## Tests
 
 ```sh

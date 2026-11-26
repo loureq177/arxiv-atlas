@@ -9,11 +9,14 @@ dependencies = [
     "numpy>=2.5.5",
     "pgvector>=0.5.1",
     "psycopg[binary]>=3.2",
+    "scikit-learn>=1.9.1",
     "sentence-transformers>=6.3.0",
+    "typer>=0.29.3",
+    "umap-learn>=0.6.0",
 ]
 
 [project.scripts]
-arxiv-atlas = "arxiv_atlas.cli:main"
+arxiv-atlas = "arxiv_atlas.cli:app"
 
 [dependency-groups]
 dev = [
@@ -21,6 +24,7 @@ dev = [
     "pre-commit>=4.7.0",
     "pytest>=8",
     "ruff>=0.17.6",
+    "scipy-stubs>=1.18.1.1",
 ]
 
 [build-system]
@@ -58,6 +62,13 @@ files = ["src", "tests"]
 # Module names relative to src/ and the repo root, so tests are `tests.<pkg>.<module>`.
 mypy_path = ["src"]
 explicit_package_bases = true
+# umap-learn ships type markers but leaves most functions unannotated.
+untyped_calls_exclude = ["umap"]
+
+# scikit-learn has no type information: its imports are treated as Any.
+[[tool.mypy.overrides]]
+module = ["sklearn.*"]
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "tests.*"

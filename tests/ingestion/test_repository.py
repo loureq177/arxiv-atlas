@@ -1,31 +1,17 @@
-"""Integration tests against a real PostgreSQL with pgvector.
-
-Run with e.g. `TEST_DATABASE_URL=postgresql://atlas:atlas@localhost:5432/atlas_test uv run pytest`.
-The tests drop and recreate the tables, so never point this at your real database.
-"""
+"""Integration tests against a real PostgreSQL; see tests/conftest.py."""
 
 import dataclasses
-import os
 from datetime import date
 
-import psycopg
 import pytest
 
 from arxiv_atlas.ingestion.parser import parse_list_records
 from arxiv_atlas.ingestion.repository import Repository
 
-DSN = os.environ.get("TEST_DATABASE_URL", "")
-pytestmark = pytest.mark.skipif(not DSN, reason="TEST_DATABASE_URL not set")
-
 
 @pytest.fixture
-def repo():
-    with psycopg.connect(DSN, autocommit=True) as conn:
-        conn.execute("DROP TABLE IF EXISTS papers, harvest_runs")
-    repo = Repository.connect(DSN)
-    repo.init_schema()
-    yield repo
-    repo.close()
+def repo(db):
+    return Repository(db)
 
 
 def fetch_paper(repo, arxiv_id):
@@ -34,10 +20,6 @@ def fetch_paper(repo, arxiv_id):
         " FROM papers WHERE arxiv_id = %s",
         (arxiv_id,),
     ).fetchone()
-
-
-def test_init_schema_is_idempotent(repo):
-    repo.init_schema()
 
 
 def test_save_page_upserts_and_checkpoints(repo, fixture_bytes):

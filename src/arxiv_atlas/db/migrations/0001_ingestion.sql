@@ -1,4 +1,5 @@
--- Idempotent: safe to run on every `arxiv-atlas init-db`.
+-- Idempotent (IF NOT EXISTS): databases created before the migration runner already
+-- have these tables, and the runner applies this file to them once more.
 
 CREATE EXTENSION IF NOT EXISTS vector;
 

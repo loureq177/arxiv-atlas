@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
-from importlib.resources import files
 
 import psycopg
 from psycopg.rows import TupleRow
@@ -77,12 +76,6 @@ class Repository:
 
     def close(self) -> None:
         self._conn.close()
-
-    def init_schema(self) -> None:
-        # Bytes, not str: psycopg types queries as LiteralString to block SQL built from
-        # runtime strings, and a file we ship is trusted but not a literal.
-        sql = files("arxiv_atlas.db").joinpath("migrations", "0001_ingestion.sql").read_bytes()
-        self._conn.execute(sql)
 
     def is_window_done(self, set_spec: str, from_date: date, until_date: date) -> bool:
         row = self._conn.execute(
